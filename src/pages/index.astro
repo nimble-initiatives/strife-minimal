@@ -1,0 +1,131 @@
+---
+// Read a localized value defensively: the content index may return a plain scalar
+// (single-locale teams, or an index that translates per entry) or a locale-keyed
+// object like { en: "…" }. Handle both — mirrors the index's own translator.
+function t(value: unknown, locale = 'en'): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const v = obj[locale] ?? Object.values(obj)[0];
+    return typeof v === 'string' ? v : '';
+  }
+  return '';
+}
+
+let heading = 'Welcome to your new Strife site';
+let body =
+  '<p>This page is rendered live from Strife. Open your studio to edit the content, then refresh.</p>';
+
+try {
+  // Imported dynamically so a missing/invalid STRIFE_SECRET (the store module
+  // self-initialises on import) is caught here rather than crashing the render —
+  // the page degrades to the placeholder copy below until `strife` provisions it.
+  const { store } = await import('strife:store');
+  const session = store.openSession();
+  // `strife push` deploys a `Content/ByUrl` index for URL-based lookups.
+  const page = await session
+    .query({ indexName: 'Content/ByUrl' })
+    .whereEquals('url', Astro.url.pathname)
+    .firstOrNull();
+  if (page) {
+    heading = t((page as Record<string, unknown>).heading) || heading;
+    body = t((page as Record<string, unknown>).body) || body;
+  }
+} catch (err) {
+  // The store is unreachable (missing/invalid STRIFE_SECRET, or the schema hasn't
+  // been pushed/seeded yet). Fall back to the placeholder copy so the page still
+  // renders — run `strife` to provision, then `strife push`.
+  console.warn('[strife] could not read content:', err instanceof Error ? err.message : err);
+}
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{heading}</title>
+    <meta name="description" content="A minimal Astro site powered by Strife." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <main>
+      <span class="badge">Powered by Strife</span>
+      <h1>{heading}</h1>
+      <div class="prose" set:html={body} />
+      <footer>Edit this page in your Strife studio, then refresh — your changes appear here.</footer>
+    </main>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background:
+          radial-gradient(1200px 600px at 50% -10%, rgba(109, 94, 252, 0.18), transparent 60%),
+          linear-gradient(180deg, #0b0b14, #14142b);
+        color: #e8e8f0;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+      }
+      main {
+        max-width: 42rem;
+        text-align: center;
+        animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #bdb6ff;
+        border: 1px solid rgba(109, 94, 252, 0.4);
+        border-radius: 999px;
+        padding: 0.35rem 0.85rem;
+        margin-bottom: 1.75rem;
+      }
+      h1 {
+        font-size: clamp(2.25rem, 6vw, 3.75rem);
+        line-height: 1.05;
+        margin: 0 0 1.25rem;
+        background: linear-gradient(90deg, #ffffff, #bdb6ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .prose {
+        font-size: 1.15rem;
+        line-height: 1.7;
+        color: #c7c7d6;
+      }
+      .prose :global(p) {
+        margin: 0 0 1rem;
+      }
+      .prose :global(a) {
+        color: #bdb6ff;
+      }
+      footer {
+        margin-top: 2.75rem;
+        font-size: 0.9rem;
+        color: #7a7a92;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+      }
+    </style>
+  </body>
+</html>

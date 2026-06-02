@@ -1,0 +1,18 @@
+# build output
+dist/
+.output/
+
+# dependencies
+node_modules/
+
+# Strife — provisioned per environment by `strife` (never commit secrets)
+.env
+.env.production
+.strife/
+
+# astro
+.astro/
+
+# os / editor
+.DS_Store
+*.log

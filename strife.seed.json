@@ -1,0 +1,13 @@
+{
+  "documents": [
+    {
+      "template": "home",
+      "name": "Home",
+      "slug": "/",
+      "fields": {
+        "heading": "Welcome to your new Strife site",
+        "body": "<p>This page is rendered live from Strife. Open your studio to edit this content, then refresh — your changes appear here.</p>"
+      }
+    }
+  ]
+}
