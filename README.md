@@ -54,7 +54,7 @@ This starter uses Astro's default static output, which works everywhere and snap
 export default defineConfig({
   output: 'server',
   // add an adapter for your host, e.g. `npx astro add node`
-  integrations: [strife({ collections: [{ name: 'Pages' }] })],
+  integrations: [strife()],
 });
 ```
 
