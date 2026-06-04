@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import svelte from '@astrojs/svelte';
 import strife from '@strifeapp/astro';
 
 // Strife connects your site to its content store through a `strife:store` virtual
@@ -16,5 +17,7 @@ import strife from '@strifeapp/astro';
 export default defineConfig({
   output: 'server',
   server: { port: 4321 },
-  integrations: [strife()],
+  // `svelte()` powers the live-preview island (src/components/HomeContent.svelte).
+  // It must be registered before `strife()`.
+  integrations: [svelte(), strife()],
 });
