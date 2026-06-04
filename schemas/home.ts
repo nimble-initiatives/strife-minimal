@@ -12,6 +12,5 @@ export default defineType({
   fields: {
     heading: fields.text({ label: 'Heading', localizable: true }),
     body: fields.html({ label: 'Body', localizable: true }),
-    image: fields.image({ label: 'Hero image' }),
   },
 });

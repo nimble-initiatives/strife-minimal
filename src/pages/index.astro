@@ -1,9 +1,10 @@
 ---
 import LivePreview from '@strifeapp/astro/LivePreview.astro';
+import HomeContent from '../components/HomeContent.svelte';
 
 // Read a localized value defensively: the content index may return a plain scalar
-// (single-locale teams, or an index that translates per entry) or a locale-keyed
-// object like { en: "…" }. Handle both — mirrors the index's own translator.
+// (single-locale teams) or a locale-keyed object like { en: "…" }. Used here only
+// for the <title>; HomeContent re-resolves the same way for its live updates.
 function t(value: unknown, locale = 'en'): string {
   if (value == null) return '';
   if (typeof value === 'string') return value;
@@ -15,14 +16,16 @@ function t(value: unknown, locale = 'en'): string {
   return '';
 }
 
-let heading = 'Welcome to your new Strife site';
-let body =
-  '<p>This page is rendered live from Strife. Open your studio to edit the content, then refresh.</p>';
+// Placeholder copy until `strife` provisions the store and seeds the Home document
+// (see strife.seed.json). Once seeded, the values below come from your content.
+let heading: unknown = 'Your content, live from Strife';
+let body: unknown =
+  '<p>This page renders its heading and body straight from your Strife content store. Open Strife Studio, edit them, and watch the change land here in real time — no refresh, no rebuild.</p>';
 
 try {
   // Imported dynamically so a missing/invalid STRIFE_SECRET (the store module
   // self-initialises on import) is caught here rather than crashing the render —
-  // the page degrades to the placeholder copy below until `strife` provisions it.
+  // the page degrades to the placeholder copy above until `strife` provisions it.
   const { store } = await import('strife:store');
   const session = store.openSession();
   // `strife push` deploys a `Content/ByUrl` index for URL-based lookups.
@@ -31,8 +34,9 @@ try {
     .whereEquals('url', Astro.url.pathname)
     .firstOrNull();
   if (page) {
-    heading = t((page as Record<string, unknown>).heading) || heading;
-    body = t((page as Record<string, unknown>).body) || body;
+    const p = page as Record<string, unknown>;
+    if (p.heading != null) heading = p.heading;
+    if (p.body != null) body = p.body;
   }
 } catch (err) {
   // The store is unreachable (missing/invalid STRIFE_SECRET, or the schema hasn't
@@ -42,10 +46,18 @@ try {
 }
 
 // `Astro.locals.editMode` is set per request by the Strife edit-mode middleware
-// (auto-registered by the integration) when a valid `?token=` preview is present, so
-// Strife Studio's live preview can push edits into this page. Branch your markup on it
-// to render draft vs published content.
+// (auto-registered by the integration) when a valid `?token=` preview is present.
 const editMode = Astro.locals.editMode ?? false;
+
+// Static starter chrome — these two cards are NOT Strife content, just the
+// welcome links. Edit or remove them freely (or promote them into your schema).
+const docsUrl = 'https://developers.strife.app';
+// TODO: swap these for your real community links.
+const community = [
+  { label: 'Slack', href: 'https://strife.app/slack' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/strifeapp' },
+  { label: 'Contact us', href: 'https://strife.app/contact' },
+];
 ---
 
 <!doctype html>
@@ -53,89 +65,75 @@ const editMode = Astro.locals.editMode ?? false;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{heading}</title>
+    <title>{t(heading)}</title>
     <meta name="description" content="A minimal Astro site powered by Strife." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <!-- Loads the Strife live-preview SDK only when editMode is active. Place once, like <ClientRouter />. -->
+    <!-- Loads the Strife live-preview SDK, but only in edit mode. Place once, like <ClientRouter />. -->
     <LivePreview />
-  </head>
-  <body>
-    <main>
-      <span class="badge">{editMode ? '✏️ Edit mode' : 'Powered by Strife'}</span>
-      <h1>{heading}</h1>
-      <div class="prose" set:html={body} />
-      <footer>Edit this page in your Strife studio, then refresh — your changes appear here.</footer>
-    </main>
-
-    <style>
+    <style is:global>
       :root {
         color-scheme: dark;
+
+        /* Brand */
+        --accent: oklch(0.64 0.2 280); /* Strife purple, ≈ #6d5efc */
+        --accent-bright: oklch(0.8 0.1 285); /* lighter purple for text, ≈ #bdb6ff */
+
+        /* Surfaces — a near-black tinted toward the brand hue, not pure black */
+        --bg: oklch(0.155 0.022 285);
+        --surface: oklch(0.205 0.026 285);
+        --surface-hover: oklch(0.24 0.03 285);
+
+        /* Ink */
+        --ink: oklch(0.96 0.008 285);
+        --ink-muted: oklch(0.74 0.02 285);
+        --ink-faint: oklch(0.58 0.026 285);
+
+        /* Hairlines */
+        --line: color-mix(in oklab, var(--ink), transparent 88%);
+
+        /* Type — one clean sans throughout, matching the "Powered by Strife"
+           wordmark. Display = body, separated by weight/size, not family. Sourced
+           from the OS, so the starter ships zero font downloads. */
+        --font-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        --font-display: var(--font-body);
+
+        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
       }
-      * {
+
+      :where(*, *::before, *::after) {
         box-sizing: border-box;
       }
-      html,
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
       body {
         margin: 0;
-        min-height: 100%;
+        min-block-size: 100dvh;
+        background-color: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
       }
-      body {
-        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background:
-          radial-gradient(1200px 600px at 50% -10%, rgba(109, 94, 252, 0.18), transparent 60%),
-          linear-gradient(180deg, #0b0b14, #14142b);
-        color: #e8e8f0;
-        display: grid;
-        place-items: center;
-        padding: 2rem;
-      }
-      main {
-        max-width: 42rem;
-        text-align: center;
-        animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-      }
-      .badge {
-        display: inline-block;
-        font-size: 0.72rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #bdb6ff;
-        border: 1px solid rgba(109, 94, 252, 0.4);
-        border-radius: 999px;
-        padding: 0.35rem 0.85rem;
-        margin-bottom: 1.75rem;
-      }
-      h1 {
-        font-size: clamp(2.25rem, 6vw, 3.75rem);
-        line-height: 1.05;
-        margin: 0 0 1.25rem;
-        background: linear-gradient(90deg, #ffffff, #bdb6ff);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-      .prose {
-        font-size: 1.15rem;
-        line-height: 1.7;
-        color: #c7c7d6;
-      }
-      .prose :global(p) {
-        margin: 0 0 1rem;
-      }
-      .prose :global(a) {
-        color: #bdb6ff;
-      }
-      footer {
-        margin-top: 2.75rem;
-        font-size: 0.9rem;
-        color: #7a7a92;
-      }
-      @keyframes rise {
-        from {
-          opacity: 0;
-          transform: translateY(14px);
-        }
+
+      ::selection {
+        background: color-mix(in oklab, var(--accent), transparent 65%);
+        color: var(--ink);
       }
     </style>
+  </head>
+  <body>
+    <!-- The heading + body render live from Strife; `client:load` hydrates the
+         island so `subscribe` can stream Studio edits in without a refresh. -->
+    <HomeContent
+      client:load
+      heading={t(heading)}
+      body={t(body)}
+      editMode={editMode}
+      docsUrl={docsUrl}
+      community={community}
+    />
   </body>
 </html>
