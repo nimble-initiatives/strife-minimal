@@ -1,4 +1,6 @@
 ---
+import LivePreview from '@strifeapp/astro/LivePreview.astro';
+
 // Read a localized value defensively: the content index may return a plain scalar
 // (single-locale teams, or an index that translates per entry) or a locale-keyed
 // object like { en: "…" }. Handle both — mirrors the index's own translator.
@@ -38,6 +40,12 @@ try {
   // renders — run `strife` to provision, then `strife push`.
   console.warn('[strife] could not read content:', err instanceof Error ? err.message : err);
 }
+
+// `Astro.locals.editMode` is set per request by the Strife edit-mode middleware
+// (auto-registered by the integration) when a valid `?token=` preview is present, so
+// Strife Studio's live preview can push edits into this page. Branch your markup on it
+// to render draft vs published content.
+const editMode = Astro.locals.editMode ?? false;
 ---
 
 <!doctype html>
@@ -48,10 +56,12 @@ try {
     <title>{heading}</title>
     <meta name="description" content="A minimal Astro site powered by Strife." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- Loads the Strife live-preview SDK only when editMode is active. Place once, like <ClientRouter />. -->
+    <LivePreview />
   </head>
   <body>
     <main>
-      <span class="badge">Powered by Strife</span>
+      <span class="badge">{editMode ? '✏️ Edit mode' : 'Powered by Strife'}</span>
       <h1>{heading}</h1>
       <div class="prose" set:html={body} />
       <footer>Edit this page in your Strife studio, then refresh — your changes appear here.</footer>
