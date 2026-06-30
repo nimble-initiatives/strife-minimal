@@ -24,19 +24,23 @@ If you cloned this template yourself:
 
 ```bash
 npm install
-strife          # provision STRIFE_SECRET into .env + link a team
-strife push     # deploy the schema (templates + content index)
+strife                   # provision STRIFE_SECRET into .env + link a team
+strife push              # deploy the schema (templates + content index)
+strife typegen generate  # emit TypeScript types to .strife/types.ts
 npm run dev
 ```
 
 You need a `STRIFE_SECRET` in `.env` (the CLI writes it). Without it the page renders placeholder copy.
 
+`strife typegen generate` writes `.strife/types.ts` (gitignored, regenerated). `src/pages/index.astro` and `src/components/HomeContent.svelte` import the `Home` type from there, so re-run it after editing `schemas/` — otherwise your editor flags the missing module. The page still renders without it: the `import type` is erased at build, only type-checking needs the file.
+
 ## What's inside
 
 | Path | What |
 | --- | --- |
-| `schemas/home.ts` | The `home` page type (`defineType`) — heading, body, hero image. |
+| `schemas/home.ts` | The `home` page type (`defineType`) — `heading` + `body`, both localizable. |
 | `strife.config.ts` | Points `strife push` / `strife typegen` at `./schemas`. |
+| `.strife/types.ts` | Generated types (`strife typegen generate`) — `Home` and friends. Gitignored; regenerate after schema edits. |
 | `strife.seed.json` | The initial Home content the CLI seeds on setup. |
 | `src/pages/index.astro` | Reads the Home document from `strife:store`, then renders it through the live-preview island. |
 | `src/components/HomeContent.svelte` | The Svelte island: renders heading + body and `subscribe`s to Strife Studio for live edits. |

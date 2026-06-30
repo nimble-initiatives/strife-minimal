@@ -1,0 +1,53 @@
+/* Global design tokens + base resets. Imported once from src/pages/index.astro.
+   Keeping these out of the page keeps index.astro focused on fetching content. */
+:root {
+  color-scheme: dark;
+
+  /* Brand */
+  --accent: oklch(0.64 0.2 280); /* Strife purple, ≈ #6d5efc */
+  --accent-bright: oklch(0.8 0.1 285); /* lighter purple for text, ≈ #bdb6ff */
+
+  /* Surfaces — a near-black tinted toward the brand hue, not pure black */
+  --bg: oklch(0.155 0.022 285);
+  --surface: oklch(0.205 0.026 285);
+  --surface-hover: oklch(0.24 0.03 285);
+
+  /* Ink */
+  --ink: oklch(0.96 0.008 285);
+  --ink-muted: oklch(0.74 0.02 285);
+  --ink-faint: oklch(0.58 0.026 285);
+
+  /* Hairlines */
+  --line: color-mix(in oklab, var(--ink), transparent 88%);
+
+  /* Type — one clean sans throughout, matching the "Powered by Strife"
+     wordmark. Display = body, separated by weight/size, not family. Sourced
+     from the OS, so the starter ships zero font downloads. */
+  --font-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-body);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-block-size: 100dvh;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent), transparent 65%);
+  color: var(--ink);
+}
