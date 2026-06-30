@@ -8,16 +8,6 @@
         "heading": "Your content, live from Strife",
         "body": "<p>This page renders its heading and body straight from your Strife content store. Open Strife Studio, edit them, and watch the change land here in real time — no refresh, no rebuild.</p>"
       }
-    },
-    {
-      "name": "localization",
-      "locales": ["en"],
-      "defaultLocale": "en",
-      "fallbackToPrimary": true,
-      "@metadata": {
-        "@collection": "Configurations",
-        "@id": "Configurations/Localization"
-      }
     }
   ]
 }

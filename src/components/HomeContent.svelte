@@ -2,17 +2,15 @@
   import { onMount, untrack } from 'svelte';
   import { subscribe } from '@strifeapp/strife';
   import PoweredByStrife from './PoweredByStrife.svelte';
+  // `Home` comes from `strife typegen generate` → .strife/types.ts (gitignored).
+  import type { Home } from '../../.strife/types';
 
-  // Content can arrive as a plain string or a locale-keyed object ({ en: "…" }) —
-  // both from the server (initial props) and from live-preview updates.
-  type Localized = string | Record<string, unknown> | null | undefined;
   type CommunityLink = { label: string; href: string };
 
   interface Props {
-    heading?: Localized;
-    body?: Localized;
+    heading?: string;
+    body?: string;
     editMode?: boolean;
-    locale?: string;
     docsUrl?: string;
     community?: CommunityLink[];
   }
@@ -21,25 +19,15 @@
     heading: initialHeading = '',
     body: initialBody = '',
     editMode = false,
-    locale = 'en',
     docsUrl = 'https://developers.strife.app',
     community = [],
   }: Props = $props();
 
-  // Resolve either shape to a string — mirrors the reader in index.astro so the
-  // server-rendered value and the live-preview value behave identically.
-  function t(value: Localized): string {
-    if (value == null) return '';
-    if (typeof value === 'string') return value;
-    const v = (value as Record<string, unknown>)[locale] ?? Object.values(value)[0];
-    return typeof v === 'string' ? v : '';
-  }
-
   // Seed once from the server-rendered props; from here on `subscribe` owns these.
   // `untrack` makes that one-time read explicit (and silences Svelte's
   // state_referenced_locally hint, which assumes we forgot to stay reactive).
-  let heading = $state(untrack(() => t(initialHeading)));
-  let body = $state(untrack(() => t(initialBody)));
+  let heading = $state(untrack(() => initialHeading));
+  let body = $state(untrack(() => initialBody));
 
   onMount(() => {
     // This is the whole point of the live preview: Strife Studio pushes the full
@@ -52,9 +40,9 @@
     // `{@html}` keeps this starter dependency-free.
     return subscribe((data) => {
       if (!data || typeof data !== 'object') return;
-      const doc = data as Record<string, Localized>;
-      if ('heading' in doc) heading = t(doc.heading);
-      if ('body' in doc) body = t(doc.body);
+      const doc = data as Home;
+      if (typeof doc.heading === 'string') heading = doc.heading;
+      if (typeof doc.body === 'string') body = doc.body;
     });
   });
 </script>
