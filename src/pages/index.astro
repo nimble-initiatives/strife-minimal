@@ -22,17 +22,29 @@ let heading: unknown = 'Your content, live from Strife';
 let body: unknown =
   '<p>This page renders its heading and body straight from your Strife content store. Open Strife Studio, edit them, and watch the change land here in real time — no refresh, no rebuild.</p>';
 
+// `Astro.locals.editMode` is set per request by the Strife edit-mode middleware
+// (auto-registered by the integration) when a valid `?token=` preview is present.
+const editMode = Astro.locals.editMode ?? false;
+
 try {
   // Imported dynamically so a missing/invalid STRIFE_SECRET (the store module
   // self-initialises on import) is caught here rather than crashing the render —
   // the page degrades to the placeholder copy above until `strife` provisions it.
   const { store } = await import('strife:store');
   const session = store.openSession();
-  // `strife push` deploys a `Content/ByUrl` index for URL-based lookups.
-  const page = await session
-    .query({ indexName: 'Content/ByUrl' })
-    .whereEquals('url', Astro.url.pathname)
-    .firstOrNull();
+  // `strife push` deploys a `Content/ByUrl` index for URL-based lookups. The index
+  // also emits rows for a document's live /draft (pending edits) and /scheduled
+  // (pending publish) siblings, and they share the canonical's url — so always
+  // filter on status, or firstOrNull may return unpublished content.
+  const byUrl = (status: string) =>
+    session
+      .query({ indexName: 'Content/ByUrl' })
+      .whereEquals('url', Astro.url.pathname)
+      .whereEquals('status', status)
+      .firstOrNull();
+  // Edit mode prefers the draft row so Studio previews pending edits on first
+  // paint; HomeContent's `subscribe` takes over for subsequent keystrokes.
+  const page = (editMode ? await byUrl('draft') : null) ?? (await byUrl('published'));
   if (page) {
     const p = page as Record<string, unknown>;
     if (p.heading != null) heading = p.heading;
@@ -44,10 +56,6 @@ try {
   // renders — run `strife` to provision, then `strife push`.
   console.warn('[strife] could not read content:', err instanceof Error ? err.message : err);
 }
-
-// `Astro.locals.editMode` is set per request by the Strife edit-mode middleware
-// (auto-registered by the integration) when a valid `?token=` preview is present.
-const editMode = Astro.locals.editMode ?? false;
 
 // Static starter chrome — these two cards are NOT Strife content, just the
 // welcome links. Edit or remove them freely (or promote them into your schema).
