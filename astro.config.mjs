@@ -19,5 +19,8 @@ export default defineConfig({
   server: { port: 4321 },
   // `svelte()` powers the live-preview island (src/components/HomeContent.svelte).
   // It must be registered before `strife()`.
-  integrations: [svelte(), strife()],
+  // `httpCache.maxBytes` bounds the RavenDB client's HTTP response cache behind
+  // `strife:store` (8 MiB is the SDK default; set it explicitly so it tracks your
+  // server's memory, and budget ~2x in heap). Needs `ravendb` >= 7.2.3 in this site.
+  integrations: [svelte(), strife({ httpCache: { maxBytes: 8 * 1024 * 1024 } })],
 });

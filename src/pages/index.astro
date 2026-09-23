@@ -36,6 +36,9 @@ try {
   // also emits rows for a document's live /draft (pending edits) and /scheduled
   // (pending publish) siblings, and they share the canonical's url — so always
   // filter on status, or firstOrNull may return unpublished content.
+  // On this route the pathname is always `/`, so the result is safely cached. In a
+  // catch-all route (`[...slug].astro`) add `.noCaching()`: a query keyed by the
+  // request path adds a cache entry per distinct URL, scanner probes included.
   const byUrl = (status: string) =>
     session
       .query({ indexName: 'Content/ByUrl' })
